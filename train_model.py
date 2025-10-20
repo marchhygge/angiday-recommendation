@@ -128,6 +128,7 @@ except Exception as e:
     if connection:
         connection.rollback()
         print("Transaction rolled back due to error.")
+    raise e
 finally:
     print("--- Cleaning up resources ---")
     if cursor:
