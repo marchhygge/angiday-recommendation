@@ -28,6 +28,7 @@ HOST = os.getenv("HOST")
 DATABASE = os.getenv("DATABASE")
 USER = os.getenv("USER")
 PASSWORD = os.getenv("PASSWORD")
+PORT = os.getenv("PORT")
 
 # --- KHỞI TẠO APP FLASK ---
 app = Flask(__name__)
@@ -48,7 +49,8 @@ def generate_for_new_user(user_id):
             host=HOST,
             database=DATABASE, 
             user=USER, 
-            password=PASSWORD
+            password=PASSWORD,
+            port=PORT
         )
         cursor = connection.cursor()
         print("[API] Đã kết nối DB.")

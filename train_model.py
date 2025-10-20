@@ -22,13 +22,14 @@ try:
     DATABASE = os.getenv("DATABASE")
     USER = os.getenv("USER")
     PASSWORD = os.getenv("PASSWORD")
+    PORT = os.getenv("PORT")
     
     connection = psycopg2.connect(
         host=HOST,
         database=DATABASE,
         user=USER,
         password=PASSWORD,
-        port='35911',
+        port=PORT
     )
     cursor = connection.cursor()
     print("[2] Connected to PostgreSQL database successfully.")
