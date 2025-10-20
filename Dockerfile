@@ -20,4 +20,4 @@ RUN python train_model.py
 
 # Bước 7: Cung cấp lệnh để khởi động server Gunicorn
 # Lệnh này sẽ chạy KHI START, Railway sẽ tự động cung cấp $PORT
-CMD ["gunicorn", "--bind", "0.0.0.0:$PORT", "api_server:app"]
+CMD gunicorn --bind 0.0.0.0:$PORT "api_server:app"
