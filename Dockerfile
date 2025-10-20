@@ -1,22 +1,16 @@
-# Bước 1: Chọn một image Python cơ sở
 FROM python:3.10-slim
-
-# Bước 2: Đặt thư mục làm việc bên trong container
 WORKDIR /app
 
-# Bước 3: Sao chép file requirements.txt vào trước
 COPY requirements.txt .
-
-# Bước 4: Cài đặt các thư viện
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Bước 5: Sao chép toàn bộ code của bạn vào container
-# (bao gồm api_server.py, train_model.py, ...)
+# Sao chép mọi thứ (bao gồm cả start.sh)
 COPY . .
 
-# Bước 6: (QUAN TRỌNG) Chạy script train_model.py
-# Bước này sẽ chạy KHI BUILD, tạo ra các file .pkl
-RUN python train_model.py
+# 1. XÓA 'RUN python train_model.py' (không train ở build-time nữa)
+#
+# 2. THÊM QUYỀN THỰC THI CHO start.sh
+RUN chmod +x ./start.sh
 
-# Bước 7: Cung cấp lệnh để khởi động server Gunicorn
-CMD gunicorn --bind 0.0.0.0:$PORT "api_server:app"
+# 3. CHẠY start.sh LÀM LỆNH KHỞI ĐỘNG
+CMD ./start.sh
