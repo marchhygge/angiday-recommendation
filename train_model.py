@@ -27,7 +27,8 @@ try:
         host=HOST,
         database=DATABASE,
         user=USER,
-        password=PASSWORD
+        password=PASSWORD,
+        port='35911',
     )
     cursor = connection.cursor()
     print("[2] Connected to PostgreSQL database successfully.")
