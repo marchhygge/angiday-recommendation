@@ -48,6 +48,7 @@ try:
          raise ValueError("No restaurant data fetched. Cannot train model.")
          
     df_restaurants = pd.DataFrame(records_restaurant, columns=[desc[0] for desc in cursor.description])
+    df_restaurants.head(10)
     
     print("[4] Creating restaurant profiles...")
     restaurant_metrics = df_restaurants.groupby(["restaurant_id"])["tag_name"] \
@@ -81,6 +82,7 @@ try:
         print("Warning: No user data fetched. Skipping batch recommendation.")
     else:
         df_users = pd.DataFrame(records_users, columns=[desc[0] for desc in cursor.description])
+        df_users.head(10)
         
         print("[7] Creating user profiles...")
         user_metrics = df_users.groupby(["user_id"])["tag_name"] \
@@ -108,6 +110,8 @@ try:
             print("No recommendations generated from user data.")
         else:
             df_recommendations = pd.DataFrame(recommendations, columns=["user_id", "restaurant_id", "score"])
+            print("Sample Recommendation Data: ")
+            df_recommendations.head(10)
             
             # --- PHẦN 3: CẬP NHẬT DATABASE ---
             print("[11] Deleting ALL existing recommendations...")

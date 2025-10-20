@@ -70,6 +70,7 @@ def generate_for_new_user(user_id):
             return jsonify({"status": "error", "message": "User has no tags"}), 404
 
         df_user = pd.DataFrame(records_user, columns=['user_id', 'tag_name'])
+        df_user.head(10)
         
         # 3. Tạo Profile User
         user_profile_text = ' '.join(df_user['tag_name'].tolist())
@@ -97,6 +98,10 @@ def generate_for_new_user(user_id):
         if not recommendations:
              print(f"[API] Không tạo được recommendation nào cho user_id: {user_id}")
              return jsonify({"status": "ok", "message": "No recommendations generated"}), 200
+        else:
+            df_recommendations = pd.DataFrame(recommendations, columns=["user_id", "restaurant_id", "score"])
+            print("[API] Sample recommendations được tạo:")
+            print(df_recommendations.head(10))
 
         # 7. Lưu vào DB
         print(f"[API] Chuẩn bị lưu {len(recommendations)} recommendations vào DB...")
