@@ -18,8 +18,7 @@ try:
     restaurant_metrics = joblib.load('restaurant_metrics.pkl')
     print("[2] Tải mô hình thành công, sẵn sàng hoạt động!")
 except FileNotFoundError:
-    print("LỖI: Không tìm thấy file .pkl. Bạn đã chạy 'train_model.py' chưa?")
-    # Trong môi trường Docker/Railway, nếu lỗi ở đây nghĩa là 'RUN python train_model.py' đã thất bại.
+    print("LỖI: Không tìm thấy file .pkl...")
     exit()
 
 # --- LOAD BIẾN MÔI TRƯỜNG CHO DB ---
@@ -34,7 +33,6 @@ PORT = os.getenv("PORT")
 app = Flask(__name__)
 
 # --- TẠO ENDPOINT API ---
-# Đây là URL mà .NET sẽ gọi: http://.../generate-recommendations/123
 @app.route("/generate-recommendations/<int:user_id>", methods=["POST"])
 def generate_for_new_user(user_id):
     """
@@ -73,23 +71,28 @@ def generate_for_new_user(user_id):
 
         df_user = pd.DataFrame(records_user, columns=['user_id', 'tag_name'])
         
+        # 3. Tạo Profile User
         user_profile_text = ' '.join(df_user['tag_name'].tolist())
         print(f"[API] Profile text của user: '{user_profile_text}'")
+
+        # 4. Sử dụng mô hình (trong RAM)
         user_vec = vectorizer.transform([user_profile_text])
         similarity_scores = cosine_similarity(user_vec, restaurant_vecs)
+        # user_scores là một mảng (ví dụ: [0.1, 0.5, 0.0, ...])
         user_scores = similarity_scores[0] 
 
-        k = 50
-        top_k_indices = np.argpartition(-user_scores, k)[:k]
-        top_k_sorted_indices = top_k_indices[np.argsort(-user_scores[top_k_indices])]
-
+        # --- SỬA LỖI: THAY THẾ TOP-K BẰNG VÒNG LẶP TẤT CẢ ---
+        print("[API] Generating all recommendations (small dataset)...")
         recommendations = []
-        for idx in top_k_sorted_indices:
+
+        # Lặp qua tất cả nhà hàng (từ 'restaurant_metrics' đã tải)
+        for restaurant_idx, restaurant_id in enumerate(restaurant_metrics["restaurant_id"]):
             recommendations.append((
                 int(user_id),
-                int(restaurant_metrics.iloc[idx]["restaurant_id"]),
-                float(user_scores[idx])
+                int(restaurant_id),
+                float(user_scores[restaurant_idx]) # Lấy điểm của nhà hàng này
             ))
+        # --- KẾT THÚC SỬA LỖI ---
         
         if not recommendations:
              print(f"[API] Không tạo được recommendation nào cho user_id: {user_id}")
