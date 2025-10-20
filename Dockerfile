@@ -11,13 +11,16 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Bước 5: Sao chép toàn bộ code của bạn vào container
-# (bao gồm api_server.py, train_model.py, ...)
+# (Bao gồm cả 'start.sh' mới)
 COPY . .
 
-# Bước 6: (QUAN TRỌNG) Chạy script train_model.py
-# Bước này sẽ chạy KHI BUILD, tạo ra các file .pkl
-RUN python train_model.py
+# --- THAY ĐỔI LỚN ---
+# 1. XÓA LỆNH 'RUN python train_model.py'
+#    Chúng ta không train ở build-time nữa.
+#
+# 2. THÊM QUYỀN THỰC THI CHO start.sh
+RUN chmod +x ./start.sh
 
-# Bước 7: Cung cấp lệnh để khởi động server Gunicorn
-# Lệnh này sẽ chạy KHI START, Railway sẽ tự động cung cấp $PORT
-CMD gunicorn --bind 0.0.0.0:$PORT "api_server:app"
+# 3. CHẠY 'start.sh' LÀM LỆNH KHỞI ĐỘNG
+#    Nó sẽ chạy train_model.py TRƯỚC, sau đó chạy gunicorn.
+CMD ./start.sh
