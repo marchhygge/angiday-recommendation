@@ -13,7 +13,7 @@ connection = None
 cursor = None
 
 try:
-    # Load environment variables from .env file
+    # Load environment variables
     dotenv_path = join(dirname(__file__), '.env')
     load_dotenv(dotenv_path)
     print("[1] Environment variables loaded successfully.")
@@ -59,7 +59,7 @@ try:
     restaurant_vecs = vectorizer.fit_transform(restaurant_metrics["restaurantCharacteristics"])
     print("Vectorizer trained.")
 
-    # LƯU MÔ HÌNH
+    # LƯU MÔ HÌNH (Rất quan trọng cho api_server.py)
     joblib.dump(vectorizer, 'vectorizer.pkl')
     joblib.dump(restaurant_vecs, 'restaurant_vectors.pkl')
     joblib.dump(restaurant_metrics, 'restaurant_metrics.pkl')
@@ -93,16 +93,14 @@ try:
         print("[9] Computing cosine similarity...")
         similarity = cosine_similarity(user_vecs, restaurant_vecs)
         
-        print("[10] Generating recommendations...")
-        k = 50
+        print("[10] Generating all recommendations (small dataset)...")
         recommendations = []
+
         for user_idx, user_id in enumerate(user_metrics["user_id"]):
-            top_k_idx = np.argpartition(-similarity[user_idx], k)[:k]
-            top_k_sorted = top_k_idx[np.argsort(-similarity[user_idx][top_k_idx])]
-            for restaurant_idx in top_k_sorted:
+            for restaurant_idx, restaurant_id in enumerate(restaurant_metrics["restaurant_id"]):
                 recommendations.append((
                     int(user_id),
-                    int(restaurant_metrics.iloc[restaurant_idx]["restaurant_id"]),
+                    int(restaurant_id),
                     float(similarity[user_idx, restaurant_idx])
                 ))
                 
