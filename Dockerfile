@@ -1,0 +1,23 @@
+# Bước 1: Chọn một image Python cơ sở
+FROM python:3.10-slim
+
+# Bước 2: Đặt thư mục làm việc bên trong container
+WORKDIR /app
+
+# Bước 3: Sao chép file requirements.txt vào trước
+COPY requirements.txt .
+
+# Bước 4: Cài đặt các thư viện (Railway sẽ cache bước này)
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Bước 5: Sao chép toàn bộ code của bạn vào container
+COPY . .
+
+# Bước 6: (QUAN TRỌNG) Chạy script train_model.py
+# Bước này sẽ chạy KHI BUILD, tạo ra các file .pkl trong image
+RUN python train_model.py
+
+# Bước 7: Cung cấp lệnh để khởi động server Gunicorn
+# Lệnh này sẽ chạy KHI START, thay thế cho "Start Command"
+# Railway sẽ tự động cung cấp biến $PORT
+CMD ["gunicorn", "--bind", "0.0.0.0:$PORT", "api_server:app"]
