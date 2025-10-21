@@ -11,15 +11,24 @@ from flask import Flask, jsonify, request
 
 print("--- STARTING RECOMMENDATION SERVER ---")
 
+# Đọc MODEL_PATH từ env, mặc định /data (phù hợp khi mount volume trên Railway)
+MODEL_PATH = os.getenv("MODEL_PATH", "/data/")
+MODEL_PATH = MODEL_PATH if MODEL_PATH.endswith("/") else MODEL_PATH + "/"
+
 try:
     print("[1] Loading model from .pkl files...")
-    MODEL_PATH = "/models/" # Read from shared storage
     vectorizer = joblib.load(MODEL_PATH + 'vectorizer.pkl')
     restaurant_vecs = joblib.load(MODEL_PATH + 'restaurant_vectors.pkl')
     restaurant_metrics = joblib.load(MODEL_PATH + 'restaurant_metrics.pkl')
-except FileNotFoundError:
-    print("Error: cannot find model files. Make sure the .pkl files are in the '/models/' directory.")
-    exit()
+except FileNotFoundError as e:
+    print(f"Error: cannot find model files in '{MODEL_PATH}'.")
+    try:
+        # Log các file hiện có trong thư mục để dễ debug
+        print(f"Files in {MODEL_PATH}: {os.listdir(MODEL_PATH)}")
+    except Exception as _:
+        print(f"Cannot list directory {MODEL_PATH}. It may not exist or is not mounted.")
+    # Thoát để gunicorn worker không chạy tiếp khi thiếu model
+    exit(1)
 
 # --- LOAD BIẾN MÔI TRƯỜNG CHO DB ---
 load_dotenv(join(dirname(__file__), '.env')) 

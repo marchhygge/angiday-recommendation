@@ -61,12 +61,18 @@ try:
     print("Vectorizer trained.")
 
     # LƯU MÔ HÌNH (Rất quan trọng cho api_server.py)
-    MODEL_PATH = "/models/" # Lưu vào ổ cứng chung
-    joblib.dump(vectorizer, MODEL_PATH + 'vectorizer.pkl')
-    joblib.dump(restaurant_vecs, MODEL_PATH + 'restaurant_vectors.pkl')
-    joblib.dump(restaurant_metrics, MODEL_PATH + 'restaurant_metrics.pkl')
-    print("Saved vectorizer, restaurant vectors, and metrics to .pkl files.")
+    MODEL_PATH = os.getenv("MODEL_PATH", "/data/")
+    MODEL_PATH = MODEL_PATH if MODEL_PATH.endswith("/") else MODEL_PATH + "/"
+    os.makedirs(MODEL_PATH, exist_ok=True)
 
+    joblib.dump(vectorizer, os.path.join(MODEL_PATH, 'vectorizer.pkl'))
+    joblib.dump(restaurant_vecs, os.path.join(MODEL_PATH, 'restaurant_vectors.pkl'))
+    joblib.dump(restaurant_metrics, os.path.join(MODEL_PATH, 'restaurant_metrics.pkl'))
+    print(f"Saved vectorizer, restaurant vectors, and metrics to: {MODEL_PATH}")
+    try:
+        print("Files in MODEL_PATH:", os.listdir(MODEL_PATH))
+    except Exception:
+        pass
 
     # --- PHẦN 2: XỬ LÝ USER VÀ TẠO RECOMMENDATION HÀNG LOẠT ---
     print("[6] Querying users...")
