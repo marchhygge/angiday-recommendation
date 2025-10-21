@@ -9,16 +9,16 @@ import os
 import joblib
 from flask import Flask, jsonify, request
 
-print("--- KHỞI ĐỘNG SERVER GỢI Ý ---")
+print("--- STARTING RECOMMENDATION SERVER ---")
 
 try:
-    print("[1] Đang tải mô hình từ file .pkl...")
-    vectorizer = joblib.load('vectorizer.pkl')
-    restaurant_vecs = joblib.load('restaurant_vectors.pkl')
-    restaurant_metrics = joblib.load('restaurant_metrics.pkl')
-    print("[2] Tải mô hình thành công, sẵn sàng hoạt động!")
+    print("[1] Loading model from .pkl files...")
+    MODEL_PATH = "/models/" # Read from shared storage
+    vectorizer = joblib.load(MODEL_PATH + 'vectorizer.pkl')
+    restaurant_vecs = joblib.load(MODEL_PATH + 'restaurant_vectors.pkl')
+    restaurant_metrics = joblib.load(MODEL_PATH + 'restaurant_metrics.pkl')
 except FileNotFoundError:
-    print("LỖI: Không tìm thấy file .pkl...")
+    print("Error: cannot find model files. Make sure the .pkl files are in the '/models/' directory.")
     exit()
 
 # --- LOAD BIẾN MÔI TRƯỜNG CHO DB ---
@@ -36,9 +36,9 @@ app = Flask(__name__)
 @app.route("/generate-recommendations/<int:user_id>", methods=["POST"])
 def generate_for_new_user(user_id):
     """
-    Tính toán và lưu recommendations cho 1 user_id cụ thể.
+    Call this API to generate recommendations for a new user.
     """
-    print(f"\n[API] Nhận được yêu cầu tính toán cho user_id: {user_id}")
+    print(f"\n[API] received the request for user_id: {user_id}")
     connection = None
     cursor = None
     try:
@@ -51,10 +51,10 @@ def generate_for_new_user(user_id):
             port=PORT
         )
         cursor = connection.cursor()
-        print("[API] Đã kết nối DB.")
+        print("[API] Connected to DB.")
 
         # 2. Query CHỈ user mới
-        print(f"[API] Querying tags cho user_id: {user_id}")
+        print(f"[API] Querying tags for user_id: {user_id}")
         user_query = """
             select b.user_id, c.name as tag_name
             from users a
@@ -66,52 +66,53 @@ def generate_for_new_user(user_id):
         records_user = cursor.fetchall()
         
         if len(records_user) == 0:
-            print(f"[API] Không tìm thấy tag cho user_id: {user_id}")
+            print(f"[API] No tags found for user_id: {user_id}")
             return jsonify({"status": "error", "message": "User has no tags"}), 404
 
         df_user = pd.DataFrame(records_user, columns=['user_id', 'tag_name'])
-        df_user.head(10)
+        print("[API] Sample tags of the user:")
+        print(df_user.head(10))
         
-        # 3. Tạo Profile User
+        # 3. Create User Profile
         user_profile_text = ' '.join(df_user['tag_name'].tolist())
-        print(f"[API] Profile text của user: '{user_profile_text}'")
+        print(f"[API] User profile text: '{user_profile_text}'")
 
-        # 4. Sử dụng mô hình (trong RAM)
+        # 4. Use model (in RAM)
         user_vec = vectorizer.transform([user_profile_text])
         similarity_scores = cosine_similarity(user_vec, restaurant_vecs)
-        # user_scores là một mảng (ví dụ: [0.1, 0.5, 0.0, ...])
+        # user_scores is an array (e.g.: [0.1, 0.5, 0.0, ...])
         user_scores = similarity_scores[0] 
 
-        # --- SỬA LỖI: THAY THẾ TOP-K BẰNG VÒNG LẶP TẤT CẢ ---
+        # --- FIX: REPLACE TOP-K WITH LOOP THROUGH ALL ---
         print("[API] Generating all recommendations (small dataset)...")
         recommendations = []
 
-        # Lặp qua tất cả nhà hàng (từ 'restaurant_metrics' đã tải)
+        # Loop through all restaurants (from 'restaurant_metrics' loaded)
         for restaurant_idx, restaurant_id in enumerate(restaurant_metrics["restaurant_id"]):
             recommendations.append((
                 int(user_id),
                 int(restaurant_id),
-                float(user_scores[restaurant_idx]) # Lấy điểm của nhà hàng này
+                float(user_scores[restaurant_idx]) # score
             ))
-        # --- KẾT THÚC SỬA LỖI ---
-        
+        # --- END FIX ---
+
         if not recommendations:
-             print(f"[API] Không tạo được recommendation nào cho user_id: {user_id}")
+             print(f"[API] No recommendations generated for user_id: {user_id}")
              return jsonify({"status": "ok", "message": "No recommendations generated"}), 200
         else:
             df_recommendations = pd.DataFrame(recommendations, columns=["user_id", "restaurant_id", "score"])
-            print("[API] Sample recommendations được tạo:")
+            print("[API] Sample recommendations generated:")
             print(df_recommendations.head(10))
 
-        # 7. Lưu vào DB
-        print(f"[API] Chuẩn bị lưu {len(recommendations)} recommendations vào DB...")
+        # 7. Save to DB
+        print(f"[API] Preparing to save {len(recommendations)} recommendations to DB...")
         cursor.execute("DELETE FROM recommendation WHERE user_id = %s", (user_id,))
         
         insert_query = "INSERT INTO recommendation (user_id, restaurant_id, score) VALUES %s"
         execute_values(cursor, insert_query, recommendations)
         
         connection.commit()
-        print(f"[API] THÀNH CÔNG! Đã lưu {len(recommendations)} recommendations cho user_id: {user_id}")
+        print(f"[API] Successfully saved {len(recommendations)} recommendations for user_id: {user_id}")
         
         return jsonify({
             "status": "success",
@@ -120,7 +121,7 @@ def generate_for_new_user(user_id):
         }), 200
 
     except Exception as e:
-        print(f"[API] LỖI: {e}")
+        print(f"[API] ERROR: {e}")
         if connection:
             connection.rollback()
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -130,4 +131,4 @@ def generate_for_new_user(user_id):
             cursor.close()
         if connection:
             connection.close()
-            print("[API] Đã đóng kết nối DB.")
+            print("[API] Closed DB connection.")

@@ -48,8 +48,8 @@ try:
          raise ValueError("No restaurant data fetched. Cannot train model.")
          
     df_restaurants = pd.DataFrame(records_restaurant, columns=[desc[0] for desc in cursor.description])
-    df_restaurants.head(10)
-    
+    print(df_restaurants.head(10))
+
     print("[4] Creating restaurant profiles...")
     restaurant_metrics = df_restaurants.groupby(["restaurant_id"])["tag_name"] \
                                        .apply(lambda x: ' | '.join(x)) \
@@ -61,9 +61,10 @@ try:
     print("Vectorizer trained.")
 
     # LƯU MÔ HÌNH (Rất quan trọng cho api_server.py)
-    joblib.dump(vectorizer, 'vectorizer.pkl')
-    joblib.dump(restaurant_vecs, 'restaurant_vectors.pkl')
-    joblib.dump(restaurant_metrics, 'restaurant_metrics.pkl')
+    MODEL_PATH = "/models/" # Lưu vào ổ cứng chung
+    joblib.dump(vectorizer, MODEL_PATH + 'vectorizer.pkl')
+    joblib.dump(restaurant_vecs, MODEL_PATH + 'restaurant_vectors.pkl')
+    joblib.dump(restaurant_metrics, MODEL_PATH + 'restaurant_metrics.pkl')
     print("Saved vectorizer, restaurant vectors, and metrics to .pkl files.")
 
 
@@ -82,7 +83,7 @@ try:
         print("Warning: No user data fetched. Skipping batch recommendation.")
     else:
         df_users = pd.DataFrame(records_users, columns=[desc[0] for desc in cursor.description])
-        df_users.head(10)
+        print(df_users.head(10))
         
         print("[7] Creating user profiles...")
         user_metrics = df_users.groupby(["user_id"])["tag_name"] \
@@ -111,7 +112,7 @@ try:
         else:
             df_recommendations = pd.DataFrame(recommendations, columns=["user_id", "restaurant_id", "score"])
             print("Sample Recommendation Data: ")
-            df_recommendations.head(10)
+            print(df_recommendations.head(10))
             
             # --- PHẦN 3: CẬP NHẬT DATABASE ---
             print("[11] Deleting ALL existing recommendations...")
