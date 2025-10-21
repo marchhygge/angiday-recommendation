@@ -12,22 +12,20 @@ from flask import Flask, jsonify, request
 print("--- STARTING RECOMMENDATION SERVER ---")
 
 # Đọc MODEL_PATH từ env, mặc định /data (phù hợp khi mount volume trên Railway)
-MODEL_PATH = os.getenv("MODEL_PATH", "/data/")
+MODEL_PATH = os.getenv("MODEL_PATH", "/models/")
 MODEL_PATH = MODEL_PATH if MODEL_PATH.endswith("/") else MODEL_PATH + "/"
 
 try:
-    print("[1] Loading model from .pkl files...")
-    vectorizer = joblib.load(MODEL_PATH + 'vectorizer.pkl')
-    restaurant_vecs = joblib.load(MODEL_PATH + 'restaurant_vectors.pkl')
-    restaurant_metrics = joblib.load(MODEL_PATH + 'restaurant_metrics.pkl')
-except FileNotFoundError as e:
+    print(f"[1] Loading model from .pkl files at: {MODEL_PATH}")
+    vectorizer = joblib.load(os.path.join(MODEL_PATH, 'vectorizer.pkl'))
+    restaurant_vecs = joblib.load(os.path.join(MODEL_PATH, 'restaurant_vectors.pkl'))
+    restaurant_metrics = joblib.load(os.path.join(MODEL_PATH, 'restaurant_metrics.pkl'))
+except FileNotFoundError:
     print(f"Error: cannot find model files in '{MODEL_PATH}'.")
     try:
-        # Log các file hiện có trong thư mục để dễ debug
         print(f"Files in {MODEL_PATH}: {os.listdir(MODEL_PATH)}")
-    except Exception as _:
+    except Exception:
         print(f"Cannot list directory {MODEL_PATH}. It may not exist or is not mounted.")
-    # Thoát để gunicorn worker không chạy tiếp khi thiếu model
     exit(1)
 
 # --- LOAD BIẾN MÔI TRƯỜNG CHO DB ---

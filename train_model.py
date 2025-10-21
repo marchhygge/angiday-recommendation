@@ -61,7 +61,7 @@ try:
     print("Vectorizer trained.")
 
     # LƯU MÔ HÌNH (Rất quan trọng cho api_server.py)
-    MODEL_PATH = os.getenv("MODEL_PATH", "/data/")
+    MODEL_PATH = os.getenv("MODEL_PATH", "/models/")
     MODEL_PATH = MODEL_PATH if MODEL_PATH.endswith("/") else MODEL_PATH + "/"
     os.makedirs(MODEL_PATH, exist_ok=True)
 
