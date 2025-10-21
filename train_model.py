@@ -41,6 +41,7 @@ try:
         from restaurants a
         inner join restaurant_tags b on a.id = b.restaurant_id
         inner join tags c on c.id = b.tag_id
+        where a.is_deleted = false
     """
     cursor.execute(restaurant_query)
     records_restaurant = cursor.fetchall()
@@ -81,6 +82,7 @@ try:
         from users a
         inner join user_tags b on b.user_id = a.id
         inner join tags c on c.id = b.tag_id
+        where a.is_deleted = false
     """
     cursor.execute(users_query)
     records_users = cursor.fetchall()
